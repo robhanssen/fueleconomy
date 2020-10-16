@@ -3,9 +3,16 @@
 # 
 # 
 # 
-
 library(tidyverse)
 library(lubridate)
+
+#
+# constants
+#
+literPerGallon = 3.78
+kmPerMile = 1.609
+fuelconversion = literPerGallon * 100 / kmPerMile  # conversion factor between mpg and L/100km in formula  [L/100km] = fuelconversion / [mpg]
+
 
 fuel_source <- read_csv("fuelups.csv")
 
@@ -18,9 +25,13 @@ fuel_source %>% mutate(date=as.Date(fuelup_date, format="%m-%d-%Y"),
                 year = year(date),
                 mpg = miles/gallons,
                 cost = gallons*price
-                ) %>% select(-fuelup_date) -> fuel
+                ) %>% select(-fuelup_date) %>%
+                arrange(car_name,date) -> fuel
 
-fuel %>% group_by(car_name) %>% mutate(timebetweenfuelups = date - lag(date)) -> fuel
+fuel %>% group_by(car_name) %>% mutate(timebetweenfuelups = date - lag(date), 
+                                       miles1 = odometer - lag(odometer)
+                                        ) -> fuel
+View(fuel)
 
 #
 # yearly use and expenses
@@ -46,11 +57,11 @@ yearlyoverview_ytd %>% ggplot() + aes(year, totalcost, fill=car_name) + geom_bar
 
 yearlyoverview_ytd %>% ggplot() + aes(year, totalmiles, fill=car_name) + geom_bar(stat="identity") +
                     labs(title="Total distance YTD", x="Year", y="Total Distance (in miles)", fill="Car") + 
-                    scale_y_continuous(sec.axis=sec_axis(name="Total Distance (in km)", ~ .*1.609))
+                    scale_y_continuous(sec.axis=sec_axis(name="Total Distance (in km)", ~ .*kmPerMile))
 
 yearlyoverview_ytd %>% ggplot() + aes(year, totalgallons, fill=car_name) + geom_bar(stat="identity") +
                     labs(title="Total fuel usage YTD", x="Year", y="Total Fuel Use (in gallons)", fill="Car") + 
-                    scale_y_continuous(sec.axis=sec_axis(name="Total Fuel Use (in L)", ~ .*3.78))
+                    scale_y_continuous(sec.axis=sec_axis(name="Total Fuel Use (in L)", ~ .*literPerGallon))
 
 
 # 
