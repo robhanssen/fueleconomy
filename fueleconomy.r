@@ -1,0 +1,80 @@
+# 
+# 
+# 
+# 
+# 
+
+library(tidyverse)
+library(lubridate)
+
+fuel_source <- read_csv("fuelups.csv")
+
+fuel_source %>% mutate(date=as.Date(fuelup_date, format="%m-%d-%Y"),
+                car_name = factor(car_name),
+                model = factor(model),
+                dayofyear = yday(date),
+                day = day(date),
+                month = month(date),
+                year = year(date),
+                mpg = miles/gallons,
+                cost = gallons*price
+                ) %>% select(-fuelup_date) -> fuel
+
+fuel %>% group_by(car_name) %>% mutate(timebetweenfuelups = date - lag(date)) -> fuel
+
+#
+# yearly use and expenses
+#
+#
+
+fuel %>% group_by(car_name, year) %>% summarize(totalmiles=sum(miles), totalgallons=sum(gallons),totalcost=sum(cost)) -> yearlyoverview
+
+yearlyoverview %>% ggplot() + aes(year, totalcost, fill=car_name) + geom_bar(stat="identity") +
+                    labs(x="Year", y="Total Cost (in US$)", fill="Car")
+
+
+#
+# YTD yearly overview
+#
+
+yday_today <- yday(today())
+
+fuel %>% filter(dayofyear <= yday_today) %>% group_by(car_name, year) %>% summarize(totalmiles=sum(miles), totalgallons=sum(gallons),totalcost=sum(cost)) -> yearlyoverview_ytd
+
+yearlyoverview_ytd %>% ggplot() + aes(year, totalcost, fill=car_name) + geom_bar(stat="identity") +
+                    labs(x="Year", y="Total Cost (in US$)", fill="Car")
+
+yearlyoverview_ytd %>% ggplot() + aes(year, totalmiles, fill=car_name) + geom_bar(stat="identity") +
+                    labs(title="Total distance YTD", x="Year", y="Total Distance (in miles)", fill="Car") + 
+                    scale_y_continuous(sec.axis=sec_axis(name="Total Distance (in km)", ~ .*1.609))
+
+yearlyoverview_ytd %>% ggplot() + aes(year, totalgallons, fill=car_name) + geom_bar(stat="identity") +
+                    labs(title="Total fuel usage YTD", x="Year", y="Total Fuel Use (in gallons)", fill="Car") + 
+                    scale_y_continuous(sec.axis=sec_axis(name="Total Fuel Use (in L)", ~ .*3.78))
+
+
+# 
+#  MPG calculations
+# 
+
+fuelconversion = 3.78/(1.609/100)  # conversion factor between mpg and L/100km in formula  [L/100km] = fuelconversion / [mpg]
+
+fuel %>% ggplot() + aes(x=date, y=mpg, color=car_name) + geom_line() + geom_point() +
+                    labs(title="Fuel Economy", x="Date", y="Fuel economy (in miles/gallons)", fill="Car") + 
+                    scale_y_continuous(limits=c(15,40), breaks=seq(15,40,5),sec.axis=sec_axis(name="Total Fuel Use (in L/100km)", ~ fuelconversion/., breaks=seq(6,20,1)))
+
+fuel %>% group_by(year,car_name) %>%
+                ggplot() + aes(x=factor(year), y=mpg) + geom_boxplot() + geom_violin(alpha=0.5) + facet_wrap(~car_name, scales="free_x") + 
+                    labs(title="Fuel Economy", x="Date", y="Fuel economy (in miles/gallons)", fill="Car") + 
+                    scale_y_continuous(breaks=seq(15,40,5),sec.axis=sec_axis(name="Total Fuel Use (in L/100km)", ~ fuelconversion/., breaks=seq(6,20,1))) +
+                    coord_flip()
+
+#
+# time between fuelups
+#
+#
+
+fuel %>% group_by(car_name) %>% mutate(timebetweenfuelups = date - lag(date)) -> tt
+
+tt %>% ggplot() + aes(timebetweenfuelups, fill=car_name) + geom_density(alpha=0.5)
+tt %>% ggplot() + aes(x=factor(year),y=timebetweenfuelups, color=car_name) + geom_violin()
