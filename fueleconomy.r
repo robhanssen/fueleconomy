@@ -43,6 +43,11 @@ fuel %>% group_by(car_name, year) %>% summarize(totalmiles=sum(miles), totalgall
 yearlyoverview %>% ggplot() + aes(year, totalcost, fill=car_name) + geom_bar(stat="identity") +
                     labs(x="Year", y="Total Cost (in US$)", fill="Car")
 
+yearlyoverview %>%  filter(year>2012) %>%
+                    ggplot() + aes(factor(year), totalmiles, fill=car_name) + geom_bar(stat="identity") +
+                    labs(title="Total distance (full year)", x="Year", y="Total Distance (in miles)", fill="Car") + 
+                    scale_y_continuous(sec.axis=sec_axis(name="Total Distance (in km)", ~ .*kmPerMile))
+
 
 #
 # YTD yearly overview
