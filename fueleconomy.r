@@ -31,7 +31,7 @@ fuel_source %>% mutate(date=as.Date(fuelup_date, format="%m-%d-%Y"),
 fuel %>% group_by(car_name) %>% mutate(timebetweenfuelups = date - lag(date), 
                                        miles1 = odometer - lag(odometer)
                                         ) -> fuel
-View(fuel)
+write_csv(fuel %>% arrange(date), "data/fuelups_processed.csv")
 
 #
 # yearly use and expenses
