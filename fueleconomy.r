@@ -68,6 +68,17 @@ yearlyoverview_ytd %>% ggplot() + aes(year, totalgallons, fill=car_name) + geom_
                     labs(title="Total fuel usage YTD", x="Year", y="Total Fuel Use (in gallons)", fill="Car") + 
                     scale_y_continuous(sec.axis=sec_axis(name="Total Fuel Use (in L)", ~ .*literPerGallon))
 
+#
+# quarterly overview
+#
+
+fuel %>% mutate(quarter = quarters(date), quarter=paste0(year,quarter)) %>% group_by(car_name, quarter) %>% summarize(year=mean(year), totalmiles=sum(miles), totalgallons=sum(gallons),totalcost=sum(cost)) -> quarteroverview
+
+quarteroverview %>%  filter(year>=2017) %>%
+                    ggplot() + aes(factor(quarter), totalmiles, fill=car_name) + geom_bar(stat="identity") +
+                    labs(title="Total distance (full quarter)", x="Quarter", y="Total Distance (in miles)", fill="Car") + 
+                    scale_y_continuous(sec.axis=sec_axis(name="Total Distance (in km)", ~ .*kmPerMile))
+
 
 # 
 #  MPG calculations
