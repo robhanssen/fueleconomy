@@ -14,11 +14,7 @@ kmPerMile = 1.609
 fuelconversion = literPerGallon * 100 / kmPerMile  # conversion factor between mpg and L/100km in formula  [L/100km] = fuelconversion / [mpg]
 
 
-# fuel_source <- read_csv("fuelups.csv")
-fuel_source <-	
-    list.files(path="cars/", pattern = "*.csv") %>% 	
-    map_df(~read_csv(paste0("cars/",.)))
-
+fuel_source <- read_csv("fuelups.csv")
 
 fuel_source %>% mutate(date=as.Date(fuelup_date, format="%m-%d-%Y"),
                 car_name = factor(car_name),
