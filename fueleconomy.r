@@ -16,25 +16,25 @@ fuelconversion = literPerGallon * 100 / kmPerMile  # conversion factor between m
 
 # fuel_source <- read_csv("fuelups.csv")
 fuel_source <-	
-    list.files(path="cars/", pattern = "*.csv") %>% 	
-    map_df(~read_csv(paste0("cars/",.)))
+    list.files(path="cars/", pattern = "*.csv", full.names=TRUE) %>% 	
+    map_df(~read_csv(.)) %>%
+    mutate(date=as.Date(fuelup_date, format="%m-%d-%Y"),
+           car_name = factor(car_name),
+           model = factor(model),
+           dayofyear = yday(date),
+           day = day(date),
+           month = month(date),
+           year = year(date),
+           mpg = miles/gallons,
+           cost = gallons*price
+           ) %>% 
+    select(-fuelup_date) %>%
+    arrange(car_name,date) %>%
+    group_by(car_name) %>% 
+    mutate( timebetweenfuelups = date - lag(date), 
+            miles1 = odometer - lag(odometer)
+            ) -> fuel
 
-
-fuel_source %>% mutate(date=as.Date(fuelup_date, format="%m-%d-%Y"),
-                car_name = factor(car_name),
-                model = factor(model),
-                dayofyear = yday(date),
-                day = day(date),
-                month = month(date),
-                year = year(date),
-                mpg = miles/gallons,
-                cost = gallons*price
-                ) %>% select(-fuelup_date) %>%
-                arrange(car_name,date) -> fuel
-
-fuel %>% group_by(car_name) %>% mutate(timebetweenfuelups = date - lag(date), 
-                                       miles1 = odometer - lag(odometer)
-                                        ) -> fuel
 write_csv(fuel %>% arrange(date), "data/fuelups_processed.csv")
 
 #
