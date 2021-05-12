@@ -13,6 +13,7 @@ literPerGallon = 3.78
 kmPerMile = 1.609
 fuelconversion = literPerGallon * 100 / kmPerMile  # conversion factor between mpg and L/100km in formula  [L/100km] = fuelconversion / [mpg]
 
+sixmonthsago = today() - months(6)
 
 # fuel_source <- read_csv("fuelups.csv")
 fuel_source <-	
@@ -26,7 +27,8 @@ fuel_source <-
            month = month(date),
            year = year(date),
            mpg = miles/gallons,
-           cost = gallons*price
+           cost = gallons*price,
+           recent = (date > sixmonthsago)
            ) %>% 
     select(-fuelup_date) %>%
     arrange(car_name,date) %>%
@@ -109,3 +111,20 @@ fuel %>% group_by(car_name) %>% mutate(timebetweenfuelups = date - lag(date)) ->
 
 tt %>% ggplot() + aes(timebetweenfuelups, fill=car_name) + geom_density(alpha=0.5)
 tt %>% ggplot() + aes(x=factor(year),y=timebetweenfuelups, color=car_name) + geom_violin()
+
+# 
+#  long-term gas mileage comparison vs recent
+# 
+
+fuel %>%    mutate(fuelec = fuelconversion/mpg) %>% 
+            group_by(car_name, recent) %>% 
+            summarize(  fuelecav = mean(fuelec),
+                        count = n(),
+                        err.bars = qnorm(0.975) * sd(fuelec, na.rm=TRUE)/sqrt(count)  ) %>% 
+            ggplot + aes(x=recent, y= fuelecav) + 
+            geom_point() + 
+            geom_errorbar(aes(ymin=fuelecav - err.bars, ymax=fuelecav+err.bars)) + 
+            scale_y_continuous(limits=c(7,14), breaks=seq(0,20,2), sec.axis=sec_axis(name="Total Fuel Use (in MPG)", ~ fuelconversion/., breaks=seq(0,40,5))) + 
+            labs(x="Recent fuel-ups (within last 6 months)", y="Average Fuel Use (in L/100 km)") + 
+            facet_wrap(~car_name) + 
+            theme_light()
