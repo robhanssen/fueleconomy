@@ -28,7 +28,7 @@ fuel_source <-
            year = year(date),
            mpg = miles/gallons,
            cost = gallons*price,
-           recent = (date > sixmonthsago)
+           recent = factor(ifelse(date > sixmonthsago, "Recent", "Over 6 months ago"))
            ) %>% 
     select(-fuelup_date) %>%
     arrange(car_name,date) %>%
@@ -90,7 +90,7 @@ quarteroverview %>%  filter(year>=2017) %>%
 #  MPG calculations
 # 
 
-fuelconversion = 3.78/(1.609/100)  # conversion factor between mpg and L/100km in formula  [L/100km] = fuelconversion / [mpg]
+# fuelconversion = 3.78/(1.609/100)  # conversion factor between mpg and L/100km in formula  [L/100km] = fuelconversion / [mpg]
 
 fuel %>% ggplot() + aes(x=date, y=mpg, color=car_name) + geom_line() + geom_point() +
                     labs(title="Fuel Economy", x="Date", y="Fuel economy (in miles/gallons)", fill="Car") + 
@@ -116,6 +116,8 @@ tt %>% ggplot() + aes(x=factor(year),y=timebetweenfuelups, color=car_name) + geo
 #  long-term gas mileage comparison vs recent
 # 
 
+fuel %>% group_by(car_name) %>% summarize(fuelecltmpg = sum(miles)/sum(gallons), fueleclt100km = fuelconversion/fuelecltmpg) -> averagedata
+
 fuel %>%    mutate(fuelec = fuelconversion/mpg) %>% 
             group_by(car_name, recent) %>% 
             summarize(  fuelecav = mean(fuelec),
@@ -124,7 +126,8 @@ fuel %>%    mutate(fuelec = fuelconversion/mpg) %>%
             ggplot + aes(x=recent, y= fuelecav) + 
             geom_point() + 
             geom_errorbar(aes(ymin=fuelecav - err.bars, ymax=fuelecav+err.bars)) + 
-            scale_y_continuous(limits=c(7,14), breaks=seq(0,20,2), sec.axis=sec_axis(name="Average Fuel Use (in MPG)", ~ fuelconversion/., breaks=seq(0,40,5))) + 
+            scale_y_continuous(limits=c(7,16), breaks=seq(0,20,2), sec.axis=sec_axis(name="Average Fuel Use (in MPG)", ~ fuelconversion/., breaks=seq(0,40,5))) + 
             labs(x="Recent fuel-ups (within last 6 months)", y="Average Fuel Use (in L/100 km)", caption="Error bars represent the 95% confidence interval") + 
-            facet_wrap(~car_name) + 
-            theme_light()
+            facet_wrap(~car_name) + geom_hline(yintercept=averagedata$fueleclt100km, lty=3) + 
+            theme_light() 
+ggsave("graphs/fuel-use-longterm-comparison.pdf", width=11, height=8)
