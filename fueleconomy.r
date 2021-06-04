@@ -126,7 +126,7 @@ fuel %>%    mutate(fuelec = fuelconversion/mpg) %>%
             ggplot + aes(x=recent, y= fuelecav) + 
             geom_point() + 
             geom_errorbar(aes(ymin=fuelecav - err.bars, ymax=fuelecav+err.bars)) + 
-            scale_y_continuous(limits=c(7,16), breaks=seq(0,20,2), sec.axis=sec_axis(name="Average Fuel Use (in MPG)", ~ fuelconversion/., breaks=seq(0,40,5))) + 
+            scale_y_reverse(limits=c(16,7), breaks=seq(0,20,2), sec.axis=sec_axis(name="Average Fuel Use (in MPG)", ~ fuelconversion/., breaks=seq(0,40,5))) + 
             labs(x="Recent fuel-ups (within last 6 months)", y="Average Fuel Use (in L/100 km)", caption="Error bars represent the 95% confidence interval") + 
             facet_wrap(~car_name) + geom_hline(yintercept=averagedata$fueleclt100km, lty=3) + 
             theme_light() 
