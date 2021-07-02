@@ -39,6 +39,58 @@ fuel_source <-
 
 write_csv(fuel %>% arrange(date), "data/fuelups_processed.csv")
 
+# 
+#  gas price fluctations
+# 
+
+fuel %>%    group_by(year,month) %>% 
+            summarize(fueluse=sum(gallons), fuelcost=sum(cost), av_fuel_unit=fuelcost/fueluse) %>% 
+            mutate(date=as.Date(paste0(year,"-",month,"-15"))) %>% 
+            ggplot + aes(x=date, y=av_fuel_unit) + geom_point() + geom_line() + labs(x="Date", y="Average fuel cost ($/gal)") + 
+            scale_x_date(breaks="1 year", date_labels="%Y") + 
+            theme_light()
+
+# 
+# blame what president
+#
+fuelcost <- fuel %>% mutate(president=ifelse(date<as.Date("2020-11-01"), "Trump","Biden"), president=factor(president, levels=c("Trump","Biden"))) %>% 
+            filter(date > as.Date("2020-04-30")) 
+
+head(fuelcost,15)
+# model 1
+fuelmodelcost1 <- fuelcost %>%  
+             lm(price ~ date + president , data=.) 
+
+fuelmodeldata1 <- broom::augment(fuelmodelcost1, interval="confidence")
+fuelmodelinfo1 <- broom::glance(fuelmodelcost1)
+fuelmodelparam1 <- broom::tidy(fuelmodelcost1)
+
+
+
+# model 2
+fuelmodelcost2 <- fuelcost %>%
+            lm(price ~ date, data=.) 
+
+fuelmodeldata2 <- broom::augment(fuelmodelcost2, interval="confidence") 
+fuelmodelinfo2 <- broom::glance(fuelmodelcost2)
+fuelmodelparam2 <- broom::tidy(fuelmodelcost2)
+
+
+if (fuelmodelinfo1$r.squared > fuelmodelinfo2$r.squared) { finalmodel = fuelmodeldata1} else {finalmodel = fuelmodeldata2}
+
+fuelcost %>%
+                ggplot + aes(x=date, y=price) + 
+                        geom_point(aes(color=president)) + 
+                        labs(x="Date", y="Average fuel cost ($/gal)", color="President-Elect") + 
+                        scale_x_date(breaks="3 months", date_labels="%b %Y") + 
+                        scale_y_continuous(labels=scales::dollar_format(), breaks=0.20*0:50) +
+                        theme_light()  +
+                        geom_line(data=finalmodel, aes(y=.upper), lty=2, color="black") +
+                        geom_line(data=finalmodel, aes(y=.lower), lty=2, color="black") +
+                        geom_line(data=finalmodel, aes(y=.fitted), lty=1, color="black") 
+
+#finalmodel %>% group_by(president) %>% summarize(max = max(.fitted), min=min(.fitted))
+
 #
 # yearly use and expenses
 #
