@@ -11,7 +11,9 @@ library(lubridate)
 #
 literPerGallon <- 3.78
 kmPerMile <- 1.609
-# conversion factor between mpg and L/100km in formula  [L/100km] = fuelconversion / [mpg]
+
+# conversion factor between mpg and L/100km in formula
+# [L/100km] = fuelconversion / [mpg]
 fuelconversion <- literPerGallon * 100 / kmPerMile
 
 sixmonthsago <- today() - months(6)
