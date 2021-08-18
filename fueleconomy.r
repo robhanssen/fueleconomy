@@ -18,7 +18,7 @@ fuelconversion <- literPerGallon * 100 / kmPerMile
 
 sixmonthsago <- today() - months(6)
 
-fuel_source <-
+fuel <-
     list.files(path = "cars/", pattern = "*.csv", full.names = TRUE) %>%
     map_df(~read_csv(.)) %>%
     mutate(date = as.Date(fuelup_date, format = "%m-%d-%Y"),
@@ -29,6 +29,7 @@ fuel_source <-
            month = month(date),
            year = year(date),
            mpg = miles / gallons,
+           l100km = fuelconversion / mpg,
            cost = gallons * price,
            recent = factor(ifelse(date > sixmonthsago,
                                     "Recent",
@@ -40,7 +41,7 @@ fuel_source <-
     group_by(car_name) %>%
     mutate(timebetweenfuelups = date - lag(date),
            miles1 = odometer - lag(odometer)
-            ) -> fuel
+            )
 
 write_csv(fuel %>% arrange(date), "data/fuelups_processed.csv")
 
@@ -280,19 +281,21 @@ tt %>%
 #  long-term gas mileage comparison vs recent
 #
 
-fuel %>%
+averagedata <- fuel %>%
     group_by(car_name) %>%
     summarize(fuelecltmpg = sum(miles) / sum(gallons),
               fueleclt100km = fuelconversion / fuelecltmpg
-              ) -> averagedata
+              ) 
 
-fuel %>%
+fuelcomparison <- fuel %>%
     mutate(fuelec = fuelconversion / mpg) %>%
     group_by(car_name, recent) %>%
     summarize(fuelecav = mean(fuelec),
               count = n(),
               err.bars = qnorm(0.975) * sd(fuelec, na.rm = TRUE) / sqrt(count)
-              ) %>%
+              )
+
+fuelcomparison %>%
     ggplot +
         aes(x = recent, y = fuelecav) +
         geom_point() +
@@ -312,3 +315,14 @@ fuel %>%
         theme_light()
 
 ggsave("graphs/fuel-use-longterm-comparison.pdf", width = 11, height = 8)
+
+longtermshift <- fuel %>%
+        inner_join(averagedata, by="car_name") %>%
+        mutate(l100kmdiff = l100km - fueleclt100km,
+               mpgdiff = mpg - fuelecltmpg) %>%
+        group_by(car_name) 
+
+longtermshift %>%
+        group_by(car_name) %>%
+        summarize(mn = mean(l100kmdiff), sd = sd(l100kmdiff), n=n()) %>%
+        mutate(err.bars = qnorm(0.975) * sd / sqrt(n), LCL=mn - err.bars, UCL = mn + err.bars)
