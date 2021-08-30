@@ -16,7 +16,7 @@ kmPerMile <- 1.609
 # [L/100km] = fuelconversion / [mpg]
 fuelconversion <- literPerGallon * 100 / kmPerMile
 
-sixmonthsago <- today() - months(6)
+sixmonthsago <- today() %m-% months(6)
 
 fuel <-
     list.files(path = "cars/", pattern = "*.csv", full.names = TRUE) %>%
