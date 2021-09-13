@@ -214,9 +214,11 @@ quarteroverview %>%
                  x = "Quarter",
                  y = "Total Distance (in miles)",
                  fill = "Car") +
-            scale_y_continuous(sec.axis = sec_axis(name = "Total Distance (in km)", ~ . * kmPerMile))
+            scale_y_continuous(sec.axis = sec_axis(name = "Total Distance (in km)", ~ . * kmPerMile))  +
+            theme(axis.text.x = element_text(angle = 45, vjust = 1.0, hjust=1))
 
 
+ggsave("graphs/quarterly_distance.png", width = 8, height = 6)
 #
 #  MPG calculations
 #
