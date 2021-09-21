@@ -47,7 +47,9 @@ fuel <-
 # blame what president?
 #
 
-first_date <- as.Date("2020-04-30")
+colors = c("Trump" = "red", "Biden" = "blue")
+
+first_date <- as.Date("2020-03-30")
 
 fuelcost <- fuel %>%
                 mutate(president = ifelse(date < as.Date("2020-11-01"),
@@ -95,7 +97,26 @@ fuelslope <-
     mutate(err.bar = std.error * qt(0.05 / 2, df_n, lower.tail = FALSE)) %>%
     mutate(estimate_UCL = estimate + err.bar,
            estimate_LCL = estimate - err.bar) %>%
-    select(president, starts_with("estimate")) %>%
+    select(president, starts_with("estimate")) 
+
+fuelslope %>%
+    ggplot +
+    aes(x = president, y = 30*estimate, fill = president) + 
+    geom_col(alpha = 1) +
+    geom_errorbar(aes(ymin = 30 * estimate_LCL,
+                      ymax = 30 * estimate_UCL),
+                  width = .2) +
+    scale_fill_manual(values = colors) +
+    scale_y_continuous(labels = scales::dollar_format(), limits = c(NA, 0.2)) +
+    labs(x = "President",
+         y = "Average fuel price increase per 30 days ($/gal)",
+         fill = "President",
+         caption = "Error bars represent 95% confidence interval") +
+    expand_limits(y = 0) +
+    theme_light() + 
+    theme(legend.position = "none")
+
+
 
 fueldata <-
     fuelmodel %>%
@@ -108,7 +129,7 @@ fuelcost %>%
     aes(x = date, y = price, color = president) +
     geom_point() +
     geom_line(data = fueldata, aes(y = .fitted)) +
-    geom_ribbon(alpha = .2,
+    geom_ribbon(alpha = .4,
                 data = fueldata,
                 aes(ymin = .lower,
                     ymax = .upper,
@@ -121,6 +142,7 @@ fuelcost %>%
          color = "President-(Elect)",
          fill = "President-(Elect)",
          title = "Price of fuel after the end of most lockdowns") +
+    scale_fill_manual(values = colors) +
     theme_light()
 
 ggsave("graphs/fuelcost_increase_model.pdf", width = 11, height = 8)
