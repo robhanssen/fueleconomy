@@ -123,18 +123,25 @@ fueldata <-
     mutate(fueldata = map(prezmodel, prezaugment)) %>%
     unnest(fueldata)
 
+fullmodel <-
+    fuel %>%
+    filter(date > first_date) %>% 
+    lm(price ~ date, data =  . ) %>%
+    broom::augment()
+
 
 fuelcost %>%
     ggplot +
     aes(x = date, y = price, color = president) +
     geom_point() +
     geom_line(data = fueldata, aes(y = .fitted)) +
-    geom_ribbon(alpha = .4,
-                data = fueldata,
-                aes(ymin = .lower,
-                    ymax = .upper,
-                    y = .fitted,
-                    fill = president)) +
+    geom_line(data = fullmodel, aes(y = .fitted), lty = 2, color = "black") + 
+    # geom_ribbon(alpha = .4,
+    #             data = fueldata,
+    #             aes(ymin = .lower,
+    #                 ymax = .upper,
+    #                 y = .fitted,
+    #                 fill = president)) +
     scale_x_date(date_label = "%b\n%Y", date_breaks = "2 months") +
     scale_y_continuous(labels = scales::dollar_format()) +
     labs(x = "Date",
