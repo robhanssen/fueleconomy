@@ -130,7 +130,7 @@ mpgplot <-
         labs(x = "Year",
              y = "Average fuel efficiency (in miles/mi)",
              fill = "Car",
-             title = "Average Cost per mile") +
+             title = "Average Fuel Efficiency") +
         theme(legend.position = "none")  +
         scale_x_continuous(breaks = 2010 + 2 * 0:10) +
         scale_y_continuous(breaks = 2 * 0:50) +
