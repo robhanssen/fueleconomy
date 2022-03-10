@@ -40,13 +40,27 @@ fuel <-
     mutate(
         timebetweenfuelups = date - lag(date),
         miles1 = odometer - lag(odometer)
-    )
+    ) %>%
+    ungroup() %>%
+    filter(year > 2013)
 
-write_csv(fuel %>% arrange(date), "data/fuelups_processed.csv")
+#write_csv(fuel %>% arrange(date), "data/fuelups_processed.csv")
 
 #
 #  gas price fluctations
 #
+
+fuelaverage <-
+    fuel %>%
+    group_by(year) %>%
+    summarize(totalgal = sum(gallons),
+              minprice = min(price),
+              maxprice = max(price),
+              totalcost = sum(cost),
+              .groups = "drop") %>%
+    mutate(fuelprice = totalcost / totalgal,
+            date = as.Date(paste0(year,"-07-01")))
+
 
 fuel %>%
     group_by(year, month) %>%
@@ -58,11 +72,30 @@ fuel %>%
     mutate(date = as.Date(paste0(year, "-", month, "-15"))) %>%
     ggplot() +
     aes(x = date, y = av_fuel_unit) +
-    geom_point() +
+    geom_point(
+        data = fuelaverage,
+        aes(y = fuelprice),
+        alpha = .5,
+        size = 3
+    ) +
+    geom_errorbar(
+        data = fuelaverage,
+        aes(ymin = minprice, ymax = maxprice, y = NULL),
+        alpha = .5
+    ) +
     geom_line() +
-    labs(x = "Date", y = "Average fuel cost ($/gal)") +
+    labs(x = "Date",
+        y = "Average monthly fuel cost ($/gal)",
+        title = "Fuel cost fluctuations",
+        caption = "Error bars shows min and max fuel costs") +
     scale_x_date(breaks = "1 year", date_labels = "%Y") +
+    scale_y_continuous(
+        labels = scales::dollar_format(accuracy = .01),
+        limits = c(0, NA)
+    ) +
     theme_light()
+
+ggsave("graphs/gasprice-fluctuations.png", width = 8, height = 6)
 
 #
 # yearly use and expenses
@@ -179,7 +212,6 @@ yday_augment <- function(mod) {
 
 fuelmodelprep <-
     fuel %>%
-    filter(year != 2012) %>%
     mutate(yday = yday(date)) %>%
     arrange(year, yday) %>%
     group_by(year) %>%
@@ -342,7 +374,7 @@ average_gallons <-
     fuel %>%
     ungroup() %>%
     mutate(year = year(date)) %>%
-    filter(year > 2013 & year != year(today())) %>%
+    filter(year != year(today())) %>%
     summarize(
         totalgal = sum(gallons),
         years = length(unique(year)),
