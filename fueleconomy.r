@@ -1,20 +1,17 @@
-#
-#
-#
-#
-#
 library(tidyverse)
 library(lubridate)
+library(patchwork)
+theme_set(theme_light())
 
 #
 # constants
 #
-literPerGallon <- 3.78
-kmPerMile <- 1.609
+liter_per_gallon <- 3.78
+km_per_mile <- 1.609
 
 # conversion factor between mpg and L/100km in formula
 # [L/100km] = fuelconversion / [mpg]
-fuelconversion <- literPerGallon * 100 / kmPerMile
+fuelconversion <- liter_per_gallon * 100 / km_per_mile
 
 sixmonthsago <- today() %m-% months(6)
 
@@ -65,266 +62,188 @@ fuel %>%
                 theme_light()
 
 #
-# blame what president?
-#
-fuelcost <- fuel %>%
-                mutate(president = ifelse(date < as.Date("2020-11-01"),
-                                                    "Trump",
-                                                    "Biden"
-                                                ),
-                            president = factor(president,
-                                                levels = c("Trump", "Biden"))
-                                                ) %>%
-                filter(date > as.Date("2020-04-30"))
-
-head(fuelcost, 15)
-# model 1
-fuelmodelcost1 <- fuelcost %>%
-             lm(price ~ date + president, data = .)
-
-fuelmodeldata1 <- broom::augment(fuelmodelcost1, interval = "confidence")
-fuelmodelinfo1 <- broom::glance(fuelmodelcost1)
-fuelmodelparam1 <- broom::tidy(fuelmodelcost1)
-
-
-
-# model 2
-fuelmodelcost2 <- fuelcost %>%
-            lm(price ~ date, data = .)
-
-fuelmodeldata2 <- broom::augment(fuelmodelcost2, interval = "confidence")
-fuelmodelinfo2 <- broom::glance(fuelmodelcost2)
-fuelmodelparam2 <- broom::tidy(fuelmodelcost2)
-
-
-if (fuelmodelinfo1$r.squared > fuelmodelinfo2$r.squared) {
-        finalmodel <- fuelmodeldata1
-        } else {
-        finalmodel <- fuelmodeldata2
-        }
-
-fuelcost %>%
-                ggplot + aes(x = date, y = price) +
-                        geom_point(aes(color = president)) +
-                        labs(x = "Date",
-                             y = "Average fuel cost ($/gal)",
-                             color = "President-Elect"
-                             ) +
-                        labs(title = "Price of fuel over time after the end of most lock-downs") +
-                        labs(subtitle = "There is an ongoing increase independent of president.\nImmediately after the election results were published, fuel dropped ~20 ct/gallon") +
-                        scale_x_date(breaks = "3 months", date_labels = "%b %Y") +
-                        scale_y_continuous(labels = scales::dollar_format(), breaks = 0.20 * 0:50) +
-                        theme_light()  +
-                        geom_line(data = finalmodel, aes(y = .upper), lty = 2, color = "black") +
-                        geom_line(data = finalmodel, aes(y = .lower), lty = 2, color = "black") +
-                        geom_line(data = finalmodel, aes(y = .fitted), lty = 1, color = "black")
-
-ggsave("graphs/fuelcost-increase-model.pdf", width = 11, height = 8)
-
-#
 # yearly use and expenses
 #
 #
 
-fuel %>%
+yearlyoverview <-
+    fuel %>%
+    filter(year > 2012) %>%
     group_by(car_name, year) %>%
     summarize(totalmiles = sum(miles),
               totalgallons = sum(gallons),
-              totalcost = sum(cost)
-              ) -> yearlyoverview
+              totalcost = sum(cost),
+              .groups = "drop") %>%
+    mutate(costpermile = totalcost / totalmiles,
+           averagefuelefficiency = totalmiles / totalgallons)
 
-yearlyoverview %>%
-            ggplot() +
-                aes(year, totalcost, fill = car_name) +
-                geom_bar(stat = "identity") +
-                labs(x = "Year", y = "Total Cost (in US$)", fill = "Car")
+totalmpg <-
+    fuel %>%
+    filter(car_name != "2008 Nissan Altima", year > 2012) %>%
+    group_by(car_name) %>%
+    summarize(totalgallons = sum(gallons),
+             totalmiles = sum(miles),
+             .groups = "drop") %>%
+    mutate(totalmpg = totalmiles / totalgallons) %>%
+    pull(totalmpg)
 
-yearlyoverview %>%
-        filter(year > 2012) %>%
-        ggplot() +
-            aes(factor(year), totalmiles, fill = car_name) +
-            geom_bar(stat = "identity") +
-            labs(title = "Total distance (full year)",
-                 x = "Year",
-                 y = "Total Distance (in miles)",
-                 fill = "Car") +
-            scale_y_continuous(sec.axis = sec_axis(name = "Total Distance (in km)", ~ . * kmPerMile))
-
-
-#
-# YTD yearly overview
-#
-
-yday_today <- yday(today())
-
-fuel %>%
-    filter(dayofyear <= yday_today) %>%
-    group_by(car_name, year) %>%
-    summarize(totalmiles = sum(miles),
-              totalgallons = sum(gallons),
-              totalcost = sum(cost)
-              ) -> yearlyoverview_ytd
-
-yearlyoverview_ytd %>%
-        ggplot() +
-            aes(year, totalcost, fill = car_name) +
-            geom_bar(stat = "identity") +
-            labs(x = "Year", y = "Total Cost (in US$)", fill = "Car")
-
-yearlyoverview_ytd %>%
-        ggplot() +
-            aes(year, totalmiles, fill = car_name) +
-            geom_bar(stat = "identity") +
-            labs(title = "Total distance YTD",
-                 x = "Year",
-                 y = "Total Distance (in miles)",
-                 fill = "Car") +
-            scale_y_continuous(sec.axis = sec_axis(name = "Total Distance (in km)", ~ . * kmPerMile))
-
-yearlyoverview_ytd %>%
-        ggplot() +
-            aes(year, totalgallons, fill = car_name) +
-            geom_bar(stat = "identity") +
-            labs(title = "Total fuel usage YTD",
-                 x = "Year",
-                 y = "Total Fuel Use (in gallons)",
-                 fill = "Car") +
-            scale_y_continuous(sec.axis = sec_axis(name = "Total Fuel Use (in L)", ~ . * literPerGallon))
-
-#
-# quarterly overview
-#
-
-fuel %>%
-        mutate(quarter = quarters(date),
-               quarter = paste0(year, quarter)) %>%
-               group_by(car_name, quarter) %>%
-               summarize(year = mean(year),
-                         totalmiles = sum(miles),
-                         totalgallons = sum(gallons),
-                         totalcost = sum(cost)
-                         ) -> quarteroverview
-
-quarteroverview %>%
-        filter(year >= 2017) %>%
-        ggplot() +
-            aes(factor(quarter), totalmiles, fill = car_name) +
-            geom_bar(stat = "identity") +
-            labs(title = "Total distance (full quarter)",
-                 x = "Quarter",
-                 y = "Total Distance (in miles)",
-                 fill = "Car") +
-            scale_y_continuous(sec.axis = sec_axis(name = "Total Distance (in km)", ~ . * kmPerMile))  +
-            theme(axis.text.x = element_text(angle = 45, vjust = 1.0, hjust=1))
-
-
-ggsave("graphs/quarterly_distance.png", width = 8, height = 6)
-#
-#  MPG calculations
-#
-
-fuel %>%
+yearlycost <-
+    yearlyoverview %>%
     ggplot() +
-        aes(x = date, y = mpg, color = car_name) +
+        aes(factor(year), totalcost, fill = car_name) +
+        geom_bar(stat = "identity") +
+        labs(x = "Year",
+             y = "Total Cost (in US$)",
+             fill = "Car",
+             title = "Total annual spend") +
+        theme(legend.position = "none")
+
+yearlymiles <-
+    yearlyoverview %>%
+    ggplot() +
+        aes(year, totalmiles, fill = car_name) +
+        geom_bar(stat = "identity") +
+        labs(title = "Total annual distance",
+             x = "Year",
+             y = "Total Distance (in miles)",
+             fill = "Car") +
+        scale_y_continuous(sec.axis = sec_axis(name = "Total Distance (in km)", ~ . * km_per_mile)) +
+        scale_x_continuous(breaks = 2010 + 2 * 0:10)
+
+costpermile <-
+    yearlyoverview %>%
+    ggplot() +
+        aes(year, costpermile, color = car_name) +
         geom_line() +
-        geom_point() +
-        labs(title = "Fuel Economy",
-             x = "Date",
-             y = "Fuel economy (in miles/gallons)",
-             fill = "Car") +
-        scale_y_continuous(limits = c(15, 40),
-                           breaks = seq(15, 40, 5),
-                           sec.axis = sec_axis(name = "Total Fuel Use (in L/100km)",
-                                             ~ fuelconversion / .,
-                                             breaks = seq(6, 20, 1)
-                                             )
-                            )
+        labs(x = "Year",
+             y = "Average Cost per mile (in US$/mi)",
+             fill = "Car",
+             title = "Average Cost per mile") +
+        theme(legend.position = "none")  +
+        scale_x_continuous(breaks = 2010 + 2 * 0:10)
 
-fuel %>%
-    group_by(year, car_name) %>%
+mpgplot <-
+    yearlyoverview %>%
     ggplot() +
-        aes(x = factor(year), y = mpg) +
-        geom_boxplot() +
-        geom_violin(alpha = 0.5) +
-        facet_wrap(~car_name, scales = "free_x") +
-        labs(title = "Fuel Economy",
-             x = "Date",
-             y = "Fuel economy (in miles/gallons)",
-             fill = "Car") +
-        scale_y_continuous(breaks = seq(15, 40, 5),
-                           sec.axis = sec_axis(name = "Total Fuel Use (in L/100km)",
-                                             ~ fuelconversion / .,
-                                             breaks = seq(6, 20, 1)
-                                             )
-                            ) +
-        coord_flip()
+        aes(year, averagefuelefficiency, color = car_name) +
+        geom_line() +
+        labs(x = "Year",
+             y = "Average fuel efficiency (in miles/mi)",
+             fill = "Car",
+             title = "Average Fuel Efficiency") +
+        theme(legend.position = "none")  +
+        scale_x_continuous(breaks = 2010 + 2 * 0:10) +
+        scale_y_continuous(breaks = 2 * 0:50) +
+        geom_hline(yintercept = totalmpg, lty = 2)
+
+(yearlycost + yearlymiles) / (mpgplot + costpermile)
+
+ggsave("graphs/yearlyoverview.pdf", width = 11, height = 8)
 
 #
-# time between fuelups
-#
-#
-
-fuel %>%
-    group_by(car_name) %>%
-    mutate(timebetweenfuelups = date - lag(date)
-            ) -> tt
-
-tt %>%
-    ggplot() +
-        aes(timebetweenfuelups, fill = car_name) +
-        geom_density(alpha = 0.5)
-
-tt %>%
-    ggplot() +
-        aes(x = factor(year), y = timebetweenfuelups, color = car_name) +
-        geom_violin()
-
-#
-#  long-term gas mileage comparison vs recent
+# Miles, gallons and $ spent predictions
 #
 
-averagedata <- fuel %>%
-    group_by(car_name) %>%
-    summarize(fuelecltmpg = sum(miles) / sum(gallons),
-              fueleclt100km = fuelconversion / fuelecltmpg
-              ) 
+gallonmodel <- function(tbl) {
+    lm(totalgallons ~ yday, data = tbl)
+}
 
-fuelcomparison <- fuel %>%
-    mutate(fuelec = fuelconversion / mpg) %>%
-    group_by(car_name, recent) %>%
-    summarize(fuelecav = mean(fuelec),
-              count = n(),
-              err.bars = qnorm(0.975) * sd(fuelec, na.rm = TRUE) / sqrt(count)
-              )
+costmodel <- function(tbl) {
+    lm(totalcost ~ yday, data = tbl)
+}
 
-fuelcomparison %>%
-    ggplot +
-        aes(x = recent, y = fuelecav) +
-        geom_point() +
-        geom_errorbar(aes(ymin = fuelecav - err.bars, ymax = fuelecav + err.bars)) +
-        scale_y_reverse(limits = c(16, 7),
-                        breaks = seq(0, 20, 2),
-                        sec.axis = sec_axis(name = "Average Fuel Use (in MPG)",
-                                            ~ fuelconversion / .,
-                                            breaks = seq(0, 40, 5)
-                                            )
-                        ) +
-        labs(x = "Recent fuel-ups (within last 6 months)",
-             y = "Average Fuel Use (in L/100 km)",
-             caption = "Error bars represent the 95% confidence interval") +
-        facet_wrap(~car_name) +
-        geom_hline(yintercept = averagedata$fueleclt100km, lty = 3) +
-        theme_light()
+milesmodel <- function(tbl) {
+    lm(totalmiles ~ yday, data = tbl)
+}
 
-ggsave("graphs/fuel-use-longterm-comparison.pdf", width = 11, height = 8)
+yday_augment <- function(mod) {
+    broom::augment(mod, newdata = tibble::tibble(yday = c(1, 365)))
+}
 
-longtermshift <- fuel %>%
-        inner_join(averagedata, by="car_name") %>%
-        mutate(l100kmdiff = l100km - fueleclt100km,
-               mpgdiff = mpg - fuelecltmpg) %>%
-        group_by(car_name) 
+fuelmodelprep <-
+    fuel %>%
+    filter(year != 2012) %>%
+    mutate(yday = yday(date)) %>%
+    arrange(year, yday) %>%
+    group_by(year) %>%
+    mutate(totalmiles = cumsum(miles),
+           totalcost = cumsum(cost),
+           totalgallons = cumsum(gallons)) %>%
+    select(year, yday, totalmiles, totalgallons, totalcost)
+    
+fuelmodels <-
+    fuelmodelprep %>%
+    nest() %>%
+    mutate(galmodel = map(data, gallonmodel),
+           cosmodel = map(data, costmodel),
+           milmodel = map(data, milesmodel))
 
-longtermshift %>%
-        group_by(car_name) %>%
-        summarize(mn = mean(l100kmdiff), sd = sd(l100kmdiff), n=n()) %>%
-        mutate(err.bars = qnorm(0.975) * sd / sqrt(n), LCL=mn - err.bars, UCL = mn + err.bars)
+fuelfitteddata <-
+    fuelmodels %>%
+    mutate(cosmodelinfo = map(cosmodel, yday_augment),
+           galmodelinfo = map(galmodel, yday_augment),
+           milmodelinfo = map(milmodel, yday_augment)
+    )
+
+galmod <-
+    fuelfitteddata %>%
+    unnest(galmodelinfo) %>%
+    group_by(year) %>%
+    slice_max(.fitted) %>%
+    ggplot + aes(year, .fitted, fill = factor(year)) +
+    geom_col() +
+    geom_point(data = fuelmodelprep %>%
+                      group_by(year) %>%
+                      slice_max(totalgallons),
+                aes(y = totalgallons)
+               )  +
+    scale_x_continuous(breaks = 2012 + 1:100, minor_breaks = NULL) +
+    scale_y_continuous(breaks = 200 * 0:100)  +
+    labs(x = "Year",
+         y = "Fuel Use (in gallons)",
+         title = "Fuel use by year",
+         caption = "Bars indicate predicted amount, points indicate actual use") +
+    theme(legend.position = "none")
+
+milmod <-
+    fuelfitteddata %>%
+    unnest(milmodelinfo) %>%
+    group_by(year) %>%
+    slice_max(.fitted) %>%
+    ggplot + aes(year, .fitted, fill = factor(year)) +
+    geom_col() +
+    geom_point(data = fuelmodelprep %>%
+                      group_by(year) %>%
+                      slice_max(totalmiles),
+                aes(y = totalmiles)
+               )  +
+    scale_x_continuous(breaks = 2012 + 1:100, minor_breaks = NULL) +
+    scale_y_continuous(breaks = 5000 * 0:100, labels = scales::comma_format(suffix = "\nmiles"))  +
+    labs(x = "Year",
+         y = "Distance driven (in miles)",
+         title = "Distance driven by year",
+         caption = "Bars indicate predicted distance, points indicate actual distance") +
+    theme(legend.position = "none")
+
+cosmod <-
+    fuelfitteddata %>%
+    unnest(cosmodelinfo) %>%
+    group_by(year) %>%
+    slice_max(.fitted) %>%
+    ggplot + aes(year, .fitted, fill = factor(year)) +
+    geom_col() +
+    geom_point(data = fuelmodelprep %>%
+                      group_by(year) %>%
+                      slice_max(totalcost),
+                aes(y = totalcost)
+               )  +
+    scale_x_continuous(breaks = 2012 + 1:100, minor_breaks = NULL) +
+    scale_y_continuous(breaks = 500 * 0:100, labels = scales::dollar_format())  +
+    labs(x = "Year",
+         y = "Spending on gasoline (in USD)",
+         title = "Spend on gasoline by year",
+         caption = "Bars indicate predicted spending, points indicate actual spending") +
+    theme(legend.position = "none")
+
+p2 <- milmod + galmod + cosmod
+ggsave("graphs/spendingmodel.png", width = 18, height = 6, plot = p2)
