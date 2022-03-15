@@ -3,6 +3,7 @@ library(lubridate)
 library(patchwork)
 theme_set(theme_light())
 
+source("predictive_models.r")
 #
 # constants
 #
@@ -44,8 +45,7 @@ fuel <-
     ungroup() %>%
     filter(year > 2013)
 
-#write_csv(fuel %>% arrange(date), "data/fuelups_processed.csv")
-
+save(fuel, file = "Rdata/fuel.Rdata")
 #
 #  gas price fluctations
 #
@@ -53,13 +53,17 @@ fuel <-
 fuelaverage <-
     fuel %>%
     group_by(year) %>%
-    summarize(totalgal = sum(gallons),
-              minprice = min(price),
-              maxprice = max(price),
-              totalcost = sum(cost),
-              .groups = "drop") %>%
-    mutate(fuelprice = totalcost / totalgal,
-            date = as.Date(paste0(year,"-07-01")))
+    summarize(
+        totalgal = sum(gallons),
+        minprice = min(price),
+        maxprice = max(price),
+        totalcost = sum(cost),
+        .groups = "drop"
+    ) %>%
+    mutate(
+        fuelprice = totalcost / totalgal,
+        date = as.Date(paste0(year, "-07-01"))
+    )
 
 
 fuel %>%
@@ -84,10 +88,12 @@ fuel %>%
         alpha = .5
     ) +
     geom_line() +
-    labs(x = "Date",
+    labs(
+        x = "Date",
         y = "Average monthly fuel cost ($/gal)",
         title = "Fuel cost fluctuations",
-        caption = "Error bars shows min and max fuel costs") +
+        caption = "Error bars shows min and max fuel costs"
+    ) +
     scale_x_date(breaks = "1 year", date_labels = "%Y") +
     scale_y_continuous(
         labels = scales::dollar_format(accuracy = .01),
@@ -153,8 +159,14 @@ yearlymiles <-
         y = "Total Distance (in miles)",
         fill = "Car"
     ) +
-    scale_y_continuous(sec.axis = sec_axis(name = "Total Distance (in km)", ~ . * km_per_mile)) +
-    scale_x_continuous(breaks = 2010 + 2 * 0:10)
+    scale_y_continuous(
+        sec.axis =
+            sec_axis(
+                name = "Total Distance (in km)",
+                ~ . * km_per_mile
+            )
+    ) +
+        scale_x_continuous(breaks = 2010 + 2 * 0:10)
 
 costpermile <-
     yearlyoverview %>%
@@ -258,7 +270,7 @@ galmod <-
         x = "Year",
         y = "Fuel Use (in gallons)",
         title = "Fuel use by year",
-        caption = "Bars indicate predicted amount, points indicate actual use"
+        caption = "Bars: predicted use\nPoints: actual use"
     ) +
     theme(legend.position = "none")
 
@@ -276,14 +288,17 @@ milmod <-
         aes(y = totalmiles)
     ) +
     scale_x_continuous(breaks = 2012 + 1:100, minor_breaks = NULL) +
-    scale_y_continuous(breaks = 5000 * 0:100, labels = scales::comma_format(suffix = "\nmiles")) +
-    labs(
-        x = "Year",
-        y = "Distance driven (in miles)",
-        title = "Distance driven by year",
-        caption = "Bars indicate predicted distance, points indicate actual distance"
-    ) +
-    theme(legend.position = "none")
+        scale_y_continuous(
+            breaks = 5000 * 0:100,
+            labels = scales::comma_format(suffix = "\nmiles")
+        ) +
+        labs(
+            x = "Year",
+            y = "Distance driven (in miles)",
+            title = "Distance driven by year",
+            caption = "Bars: predicted distance\nPoints: actual distance"
+        ) +
+        theme(legend.position = "none")
 
 cosmod <-
     fuelfitteddata %>%
@@ -304,7 +319,7 @@ cosmod <-
         x = "Year",
         y = "Spending on gasoline (in USD)",
         title = "Spend on gasoline by year",
-        caption = "Bars indicate predicted spending, points indicate actual spending"
+        caption = "Bars: predicted spending\nPoints: actual spending"
     ) +
     theme(legend.position = "none")
 
@@ -316,59 +331,7 @@ ggsave("graphs/spendingmodel.png", width = 18, height = 6, plot = p2)
 # try to predict gas use for the full year based on periods of various lengths
 #
 
-predict_gallons_used <- function(tbl, period) {
-    pred_data <- tibble::tibble(date = c(
-        lubridate::floor_date(today(), unit = "year"),
-        lubridate::ceiling_date(today(), unit = "year")
-    ))
-
-    history <-
-        tbl %>%
-        filter(date > today() - days(period)) %>%
-        group_by(car_name) %>%
-        mutate(
-            totalmiles = cumsum(miles),
-            totalcost = cumsum(cost),
-            totalgallons = cumsum(gallons),
-            .groups = "drop"
-        ) %>%
-        select(date, car_name, totalmiles, totalgallons, totalcost)
-
-    period_model <-
-        history %>%
-        group_by(car_name) %>%
-        nest() %>%
-        mutate(period_gal_model = map(data, ~ lm(totalgallons ~ date, data = .x)))
-
-    period_model_quality <-
-        period_model %>%
-        mutate(model_quality = map(period_gal_model, ~ broom::glance(.x))) %>%
-        unnest(model_quality) %>%
-        select(car_name, r.squared)
-
-    period_predict <-
-        period_model %>%
-        mutate(prediction = map(
-            period_gal_model,
-            function(tbl) {
-                tbl %>%
-                    broom::augment(newdata = pred_data)
-            }
-        )) %>%
-        unnest(prediction) %>%
-        select(-data, -period_gal_model) %>%
-        pivot_wider(
-            names_from = date,
-            values_from = .fitted
-        ) %>%
-        mutate(gallons_used = cur_data()[[2]] - cur_data()[[1]]) %>%
-        select(car_name, gallons_used)
-
-    period_predict %>%
-        mutate(period = period) %>%
-        inner_join(period_model_quality)
-}
-
+period_list <- c(45, 60, 90, 120, 180, 365)
 
 average_gallons <-
     fuel %>%
@@ -383,18 +346,89 @@ average_gallons <-
     mutate(average_gallons = totalgal / years) %>%
     pull(average_gallons)
 
-period_list <- c(45, 60, 90, 180, 365)
-
-map_df(period_list, ~ predict_gallons_used(fuel, .x)) %>%
+gallon_prediction <-
+    map_df(period_list, ~ predict_gallons_used(fuel, .x)) %>% 
     ggplot() +
     aes(factor(period), gallons_used, fill = car_name) +
     geom_col() +
+    scale_y_continuous(
+        labels = scales::comma_format(),
+        sec.axis = sec_axis(~ . * liter_per_gallon,
+            name = "Predicted gas (in L)",
+            labels = scales::comma_format()
+        )
+    ) +
     labs(
         x = "# of days used in prediction",
         y = "Predicted amounts of gas by end-of-year (in gallons)",
         fill = "Car",
         title = paste("Gasoline use prediction for end of year", year(today()))
     ) +
-    geom_hline(yintercept = average_gallons, lty = 2, color = "gray50")
+    geom_hline(yintercept = average_gallons, lty = 2, color = "gray50") +
+    theme(legend.position = "none")
 
-ggsave("graphs/predicted-gas-use.png", width = 8, height = 6)
+average_cost <-
+    fuel %>%
+    ungroup() %>%
+    mutate(year = year(date)) %>%
+    filter(year != year(today())) %>%
+    summarize(
+        totalcost = sum(cost),
+        years = length(unique(year)),
+        .groups = "drop"
+    ) %>%
+    mutate(average_cost = totalcost / years) %>%
+    pull(average_cost)
+
+cost_prediction <-
+    map_df(period_list, ~ predict_fuel_cost(fuel, .x)) %>%
+    ggplot() +
+    aes(factor(period), total_fuel_cost, fill = car_name) +
+    geom_col() +
+    scale_y_continuous(labels = scales::dollar_format()) +
+    labs(
+        x = "# of days used in prediction",
+        y = "Predicted fuel cost (in $)",
+        fill = "Car",
+        title = paste("Gasoline cost prediction for end of year", year(today()))
+    ) +
+    geom_hline(yintercept = average_cost, lty = 2, color = "gray50") +
+    theme(legend.position = "none")
+
+average_miles <-
+    fuel %>%
+    ungroup() %>%
+    mutate(year = year(date)) %>%
+    filter(year != year(today())) %>%
+    summarize(
+        totalmiles = sum(miles),
+        years = length(unique(year)),
+        .groups = "drop"
+    ) %>%
+    mutate(average_miles = totalmiles / years) %>%
+    pull(average_miles)
+
+distance_prediction <-
+    map_df(period_list, ~ predict_miles(fuel, .x)) %>%
+    ggplot() +
+    aes(factor(period), total_miles, fill = car_name) +
+    geom_col() +
+    scale_y_continuous(
+        labels = scales::comma_format(),
+        sec.axis = sec_axis(~ . * km_per_mile,
+            name = "Predicted distance (in km)",
+            labels = scales::comma_format()
+        )
+    ) +
+    labs(
+        x = "# of days used in prediction",
+        y = "Predicted distance driven (in mi)",
+        fill = "Car",
+        title = paste("Miles prediction for end of year", year(today()))
+    ) +
+    geom_hline(yintercept = average_miles, lty = 2, color = "gray50") +
+    theme(legend.position = "none")
+
+p <- distance_prediction + gallon_prediction + cost_prediction
+
+ggsave("graphs/predicted-car-use.png", width = 18, height = 6)
