@@ -189,13 +189,15 @@ mpgplot <-
     geom_line() +
     labs(
         x = "Year",
-        y = "Average fuel efficiency (in miles/mi)",
+        y = "Average fuel efficiency (in miles/gal)",
         fill = "Car",
         title = "Average Fuel Efficiency"
     ) +
     theme(legend.position = "none") +
     scale_x_continuous(breaks = 2010 + 2 * 0:10) +
-    scale_y_continuous(breaks = 2 * 0:50) +
+    scale_y_continuous(breaks = 2 * 0:50,
+            sec.axis = sec_axis(~ fuelconversion / ., 
+                        name = "Average fuel efficiency (in L/100km)")) +
     geom_hline(yintercept = totalmpg, lty = 2)
 
 (yearlycost + yearlymiles) / (mpgplot + costpermile)
