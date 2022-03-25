@@ -166,7 +166,7 @@ yearlymiles <-
                 ~ . * km_per_mile
             )
     ) +
-        scale_x_continuous(breaks = 2010 + 2 * 0:10)
+    scale_x_continuous(breaks = 2010 + 2 * 0:10)
 
 costpermile <-
     yearlyoverview %>%
@@ -195,9 +195,12 @@ mpgplot <-
     ) +
     theme(legend.position = "none") +
     scale_x_continuous(breaks = 2010 + 2 * 0:10) +
-    scale_y_continuous(breaks = 2 * 0:50,
-            sec.axis = sec_axis(~ fuelconversion / ., 
-                        name = "Average fuel efficiency (in L/100km)")) +
+    scale_y_continuous(
+        breaks = 2 * 0:50,
+        sec.axis = sec_axis(~ fuelconversion / .,
+            name = "Average fuel efficiency (in L/100km)"
+        )
+    ) +
     geom_hline(yintercept = totalmpg, lty = 2)
 
 (yearlycost + yearlymiles) / (mpgplot + costpermile)
@@ -258,7 +261,8 @@ galmod <-
     unnest(galmodelinfo) %>%
     group_by(year) %>%
     slice_max(.fitted) %>%
-    ggplot() + aes(year, .fitted, fill = factor(year)) +
+    ggplot() +
+    aes(year, .fitted, fill = factor(year)) +
     geom_col() +
     geom_point(
         data = fuelmodelprep %>%
@@ -281,7 +285,8 @@ milmod <-
     unnest(milmodelinfo) %>%
     group_by(year) %>%
     slice_max(.fitted) %>%
-    ggplot() + aes(year, .fitted, fill = factor(year)) +
+    ggplot() +
+    aes(year, .fitted, fill = factor(year)) +
     geom_col() +
     geom_point(
         data = fuelmodelprep %>%
@@ -290,24 +295,25 @@ milmod <-
         aes(y = totalmiles)
     ) +
     scale_x_continuous(breaks = 2012 + 1:100, minor_breaks = NULL) +
-        scale_y_continuous(
-            breaks = 5000 * 0:100,
-            labels = scales::comma_format(suffix = "\nmiles")
-        ) +
-        labs(
-            x = "Year",
-            y = "Distance driven (in miles)",
-            title = "Distance driven by year",
-            caption = "Bars: predicted distance\nPoints: actual distance"
-        ) +
-        theme(legend.position = "none")
+    scale_y_continuous(
+        breaks = 5000 * 0:100,
+        labels = scales::comma_format(suffix = "\nmiles")
+    ) +
+    labs(
+        x = "Year",
+        y = "Distance driven (in miles)",
+        title = "Distance driven by year",
+        caption = "Bars: predicted distance\nPoints: actual distance"
+    ) +
+    theme(legend.position = "none")
 
 cosmod <-
     fuelfitteddata %>%
     unnest(cosmodelinfo) %>%
     group_by(year) %>%
     slice_max(.fitted) %>%
-    ggplot() + aes(year, .fitted, fill = factor(year)) +
+    ggplot() +
+    aes(year, .fitted, fill = factor(year)) +
     geom_col() +
     geom_point(
         data = fuelmodelprep %>%
@@ -349,7 +355,7 @@ average_gallons <-
     pull(average_gallons)
 
 gallon_prediction <-
-    map_df(period_list, ~ predict_gallons_used(fuel, .x)) %>% 
+    map_df(period_list, ~ predict_gallons_used(fuel, .x)) %>%
     ggplot() +
     aes(factor(period), gallons_used, fill = car_name) +
     geom_col() +
