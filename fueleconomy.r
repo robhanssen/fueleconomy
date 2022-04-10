@@ -393,7 +393,8 @@ cost_prediction <-
     ggplot() +
     aes(factor(period), total_fuel_cost, fill = car_name) +
     geom_col() +
-    scale_y_continuous(labels = scales::dollar_format()) +
+    scale_y_continuous(labels = scales::dollar_format(),
+                        breaks = 500 * 0:100) +
     labs(
         x = "# of days used in prediction",
         y = "Predicted fuel cost (in $)",
