@@ -339,13 +339,18 @@ ggsave("graphs/spendingmodel.png", width = 18, height = 6, plot = p2)
 # try to predict gas use for the full year based on periods of various lengths
 #
 
+last_year <- year(today()) - 1
+
+cap <- paste0("Dashed line indicates value for the year ",
+              last_year)
+
 period_list <- c(45, 60, 90, 120, 180, 365)
 
 average_gallons <-
     fuel %>%
     ungroup() %>%
     mutate(year = year(date)) %>%
-    filter(year != year(today())) %>%
+    filter(year == last_year) %>%
     summarize(
         totalgal = sum(gallons),
         years = length(unique(year)),
@@ -379,7 +384,7 @@ average_cost <-
     fuel %>%
     ungroup() %>%
     mutate(year = year(date)) %>%
-    filter(year != year(today())) %>%
+    filter(year == last_year) %>%
     summarize(
         totalcost = sum(cost),
         years = length(unique(year)),
@@ -408,7 +413,7 @@ average_miles <-
     fuel %>%
     ungroup() %>%
     mutate(year = year(date)) %>%
-    filter(year != year(today())) %>%
+    filter(year == last_year) %>%
     summarize(
         totalmiles = sum(miles),
         years = length(unique(year)),
@@ -438,6 +443,9 @@ distance_prediction <-
     geom_hline(yintercept = average_miles, lty = 2, color = "gray50") +
     theme(legend.position = "none")
 
-p <- distance_prediction + gallon_prediction + cost_prediction
+p <- distance_prediction +
+    gallon_prediction +
+    cost_prediction +
+    labs(caption = cap)
 
 ggsave("graphs/predicted-car-use.png", width = 18, height = 6)
