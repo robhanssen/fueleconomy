@@ -54,7 +54,7 @@ cumulative %>%
     scale_linetype_manual(values = linetype_range) + 
     labs(
         x = "Date",
-        y = "Cumulative distance (in miles)",
+        y = "Cumulative distance (in gallons)",
         title = "How did 2020 compare to other years?",
         subtitle = "in gallons of gas"
     ) + 
