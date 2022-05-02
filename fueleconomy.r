@@ -43,7 +43,7 @@ fuel <-
         miles1 = odometer - lag(odometer)
     ) %>%
     ungroup() %>%
-    filter(year > 2013)
+    filter(year >= 2013)
 
 save(fuel, file = "Rdata/fuel.Rdata")
 #
