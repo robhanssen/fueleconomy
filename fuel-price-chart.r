@@ -10,7 +10,7 @@ predict_fuel_price <-
     lm(price ~ date, data = .) %>%
     broom::augment(
         interval = "prediction",
-        newdata = tibble(date = seq(cutoff_date - 39, invasion + 40, 1))
+        newdata = tibble(date = seq(cutoff_date - 39, today() + 40, 1))
     ) %>%
     rename(price = ".fitted")
 
@@ -28,7 +28,7 @@ fuel %>%
     scale_x_date(
         date_labels = "%b\n %Y",
         date_breaks = "3 months",
-        limits = c(cutoff_date - 40, as.Date("2022-05-01"))
+        limits = c(cutoff_date - 40, today() + 40)
     ) +
     scale_y_continuous(
         labels = scales::dollar_format(accuracy = .01),
