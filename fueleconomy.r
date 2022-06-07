@@ -173,6 +173,7 @@ costpermile <-
     ggplot() +
     aes(year, costpermile, color = car_name) +
     geom_line() +
+    scale_y_continuous(limits = c(0, NA)) +
     labs(
         x = "Year",
         y = "Average Cost per mile (in US$/mi)",
