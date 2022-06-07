@@ -13,6 +13,7 @@ cumulative <-
     mutate(
         cumulative_miles = cumsum(miles),
         cumulative_gallons = cumsum(gallons),
+        cumulative_cost = cumsum(cost),
         display_date = date + years(year_today - year),
         yearf = factor(year)
     ) %>%
@@ -57,6 +58,23 @@ cumulative %>%
         y = "Cumulative distance (in gallons)",
         title = "How did 2020 compare to other years?",
         subtitle = "in gallons of gas"
+    ) +
+    theme(legend.position = "none") +
+    geom_vline(xintercept = as.Date("2022-03-15"), lty = 2, color = "gray50")
+
+cumulative %>%
+    ggplot() +
+    aes(display_date, cumulative_cost, color = yearf, linetype = yearf) +
+    geom_line() +
+    scale_x_date(date_labels = "%b %d") +
+    scale_y_continuous(labels = scales::dollar_format()) +
+    scale_color_manual(values = color_range) +
+    scale_linetype_manual(values = linetype_range) +
+    labs(
+        x = "Date",
+        y = "Cumulative distance (in gallons)",
+        title = "How did 2020 compare to other years?",
+        subtitle = "in dollars spent"
     ) +
     theme(legend.position = "none") +
     geom_vline(xintercept = as.Date("2022-03-15"), lty = 2, color = "gray50")
