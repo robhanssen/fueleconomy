@@ -34,14 +34,14 @@ cumulative %>%
     scale_x_date(date_labels = "%b %d") +
     scale_y_continuous(labels = scales::number_format()) +
     scale_color_manual(values = color_range) +
-    scale_linetype_manual(values = linetype_range) + 
+    scale_linetype_manual(values = linetype_range) +
     labs(
         x = "Date",
         y = "Cumulative distance (in miles)",
         title = "How did 2020 compare to other years?",
         subtitle = "in distance driven"
-    ) + 
-    theme(legend.position = "none") + 
+    ) +
+    theme(legend.position = "none") +
     geom_vline(xintercept = as.Date("2022-03-15"), lty = 2, color = "gray50")
 
 cumulative %>%
@@ -51,12 +51,12 @@ cumulative %>%
     scale_x_date(date_labels = "%b %d") +
     scale_y_continuous(labels = scales::number_format()) +
     scale_color_manual(values = color_range) +
-    scale_linetype_manual(values = linetype_range) + 
+    scale_linetype_manual(values = linetype_range) +
     labs(
         x = "Date",
         y = "Cumulative distance (in gallons)",
         title = "How did 2020 compare to other years?",
         subtitle = "in gallons of gas"
-    ) + 
-    theme(legend.position = "none") + 
+    ) +
+    theme(legend.position = "none") +
     geom_vline(xintercept = as.Date("2022-03-15"), lty = 2, color = "gray50")
