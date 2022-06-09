@@ -27,7 +27,8 @@ predict_fuel_price_postinvasion <-
     rename(price = ".fitted")
 
 
-fuel %>%
+p1 <-   
+    fuel %>%
     filter(date >= cutoff_date) %>%
     ggplot() +
     aes(x = date, y = price) +
@@ -35,7 +36,7 @@ fuel %>%
     labs(
         x = "Date",
         y = "Fuel price (in $/gal)",
-        caption = "Fuel prices in South Carolina.\nBlue band indicater confidence interval of prediction"
+        caption = "Fuel prices in South Carolina.\nBlue band indicates confidence interval of prediction"
     ) +
     scale_x_date(
         date_labels = "%b\n %Y",
@@ -79,7 +80,7 @@ fuel %>%
     ) +
     theme_light()
 
-ggsave("graphs/fuel-price-postCOVID.png", width = 6, height = 6)
+ggsave("graphs/fuel-price-postCOVID.png", width = 6, height = 6, plot = p1)
 
 
 models <-
@@ -107,7 +108,8 @@ predict_multi <-
     unnest(pricepred) %>%
     rename(price = ".fitted")
 
-fuel %>%
+p2 <-
+    fuel %>%
     filter(date >= cutoff_date) %>%
     ggplot() +
     aes(x = date, y = price) +
@@ -115,7 +117,7 @@ fuel %>%
     labs(
         x = "Date",
         y = "Fuel price (in $/gal)",
-        caption = "Fuel prices in South Carolina.\nBlue band indicater confidence interval of prediction",
+        caption = "Fuel prices in South Carolina.\nBlue band indicates confidence interval of prediction",
         color = "Timeframe",
         fill = "Timeframe"
     ) +
@@ -148,4 +150,8 @@ fuel %>%
     ) +
     theme_light()
 
-ggsave("graphs/fuel-price-by-event.png", width = 8, height = 6)
+ggsave("graphs/fuel-price-by-event.png", width = 8, height = 6, plot = p2)
+
+
+library(patchwork)
+ggsave("graphs/both-price-plots.png", width = 16, height = 6, plot = p1 + p2)
