@@ -16,7 +16,7 @@ predict_fuel_price <-
     rename(price = ".fitted")
 
 
-predict_fuel_price_postinvasion <-
+predict_fuel_price_postinvasion <- # nolint
     fuel %>%
     filter(date > invasion) %>%
     lm(price ~ date, data = .) %>%
@@ -27,7 +27,7 @@ predict_fuel_price_postinvasion <-
     rename(price = ".fitted")
 
 
-p1 <-   
+p1 <-
     fuel %>%
     filter(date >= cutoff_date) %>%
     ggplot() +
@@ -36,7 +36,7 @@ p1 <-
     labs(
         x = "Date",
         y = "Fuel price (in $/gal)",
-        caption = "Fuel prices in South Carolina.\nBlue band indicates confidence interval of prediction"
+        caption = "Fuel prices in South Carolina.\nBlue band indicates confidence interval of prediction" # nolint
     ) +
     scale_x_date(
         date_labels = "%b\n %Y",
@@ -96,15 +96,17 @@ models <-
 
 predict_multi <-
     models %>%
-    mutate(pricepred = map(pricemodel, 
-            ~ broom::augment(.x, 
-                            interval = "prediction",
-                            newdata = tibble(date = seq(cutoff_date, 
-                                            today() + 61, 
-                                            1)
-                                            )
-                                )
-                    )) %>%
+    mutate(pricepred = map(
+        pricemodel,
+        ~ broom::augment(.x,
+            interval = "prediction",
+            newdata = tibble(date = seq(
+                cutoff_date,
+                today() + 61,
+                1
+            ))
+        )
+    )) %>%
     unnest(pricepred) %>%
     rename(price = ".fitted")
 
@@ -117,7 +119,7 @@ p2 <-
     labs(
         x = "Date",
         y = "Fuel price (in $/gal)",
-        caption = "Fuel prices in South Carolina.\nBlue band indicates confidence interval of prediction",
+        caption = "Fuel prices in South Carolina.\nBlue band indicates confidence interval of prediction", # nolint
         color = "Timeframe",
         fill = "Timeframe"
     ) +
