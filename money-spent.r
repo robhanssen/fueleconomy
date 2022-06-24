@@ -20,13 +20,13 @@ spending <-
 correction_factor <- 5
 
 spending %>%
-    filter(display_date >= ymd(20190101)) %>%
+    filter(display_date >= ymd(20170101)) %>%
     ggplot() +
     aes(x = display_date, y = rolling_spend) +
-    geom_point(color = "red", lty = 3) +
-    geom_point(aes(y = rolling_spend / 12 * correction_factor),
-        alpha = .5,
-        lty = 3
+    geom_line(color = "red", lty = 1) +
+    geom_line(aes(y = rolling_spend / 12 * correction_factor),
+        alpha = .8,
+        lty = 1
     ) +
     geom_col(aes(y = correction_factor * monthly_spend, fill = factor(year)),
         alpha = .5
