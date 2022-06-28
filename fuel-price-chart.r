@@ -157,3 +157,20 @@ ggsave("graphs/fuel-price-by-event.png", width = 8, height = 6, plot = p2)
 
 library(patchwork)
 ggsave("graphs/both-price-plots.png", width = 16, height = 6, plot = p1 + p2)
+
+
+fuel %>%
+    ggplot() +
+    aes(y = factor(year), x = price, fill = factor(year)) +
+    ggridges::geom_density_ridges() +
+    scale_x_continuous(breaks = seq(0, 10, .5),
+                        labels = scales::dollar_format()
+                        ) +
+    labs(
+        x = "Fuel price (per gallon)",
+        y = NULL,
+        caption = "Fuel prices in Upstate South Carolina"
+    ) +
+    theme(legend.position = "none")
+
+ggsave("graphs/fuel-price-distribution.png", width = 6, height = 6)
