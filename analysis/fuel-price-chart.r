@@ -80,7 +80,7 @@ p1 <-
     ) +
     theme_light()
 
-ggsave("graphs/fuel-price-postCOVID.png", width = 6, height = 6, plot = p1)
+# ggsave("graphs/fuel-price-postCOVID.png", width = 6, height = 6, plot = p1)
 
 
 models <-
@@ -152,7 +152,7 @@ p2 <-
     ) +
     theme_light()
 
-ggsave("graphs/fuel-price-by-event.png", width = 8, height = 6, plot = p2)
+# ggsave("graphs/fuel-price-by-event.png", width = 8, height = 6, plot = p2)
 
 
 library(patchwork)

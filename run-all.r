@@ -3,5 +3,10 @@
 #
 
 source("fueleconomy.r")
-source("fuel-price-chart.r")
-source("money-spent.r")
+
+map(
+    list.files(path = "analysis/",
+            pattern = "*.r", 
+            full.names = TRUE),
+    ~source(.x)
+    )
