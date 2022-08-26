@@ -20,7 +20,7 @@ spending <-
 correction_factor <- 5
 
 spending %>%
-    filter(display_date >= ymd(20170101)) %>%
+    filter(display_date >= ymd(20110101)) %>%
     ggplot() +
     aes(x = display_date, y = rolling_spend) +
     geom_line(color = "red", lty = 1) +
