@@ -27,7 +27,7 @@ display_date <- function(date, target_year = year(today())) {
 monthly_average_mileage_cost <-
     fuel %>%
     arrange(date) %>%
-    group_by(year, month) %>%
+    group_by(car_name, year, month) %>%
     summarize(
         totalmiles = sum(miles),
         totalmoney = sum(cost),
@@ -41,7 +41,7 @@ monthly_average_mileage_cost <-
 yearly_average_mileage_cost <-
     fuel %>%
     arrange(date) %>%
-    group_by(year) %>%
+    group_by(car_name, year) %>%
     summarize(
         totalmiles = sum(miles),
         totalmoney = sum(cost),
@@ -56,7 +56,7 @@ max_costs <-
     fuel %>%
     arrange(date) %>%
     mutate(mileage_cost = cost / miles) %>%
-    group_by(year) %>%
+    group_by(car_name, year) %>%
     summarize(
         ymin = min(mileage_cost),
         ymax = max(mileage_cost),
@@ -65,10 +65,10 @@ max_costs <-
     mutate(date = construct_date(year, month = 7, day = 1))
 
 ggplot(monthly_average_mileage_cost) +
-    aes(date, mileage_cost) +
+    aes(date, mileage_cost, color = car_name) +
     geom_line() +
     geom_point(data = yearly_average_mileage_cost, size = 3) +
-    geom_errorbar(data = max_costs, 
+    geom_errorbar(data = max_costs,
             aes(y = NULL, ymin = ymin, ymax = ymax),
             alpha = .3) +
     scale_x_date(date_labels = "%Y") +
@@ -79,6 +79,7 @@ ggplot(monthly_average_mileage_cost) +
     labs(
         x = "Date",
         y = "Average driving cost (in $/mile)"
-    )
+    ) +
+    theme(legend.position = c(0.8, 0.13))
 
 ggsave("graphs/average_driving_cost.png", width = 8, height = 6)
