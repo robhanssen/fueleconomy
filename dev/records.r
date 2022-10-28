@@ -1,6 +1,7 @@
 library(tidyverse)
 library(lubridate)
 library(patchwork)
+theme_set(theme_light())
 
 load("Rdata/fuel.Rdata")
 
@@ -28,15 +29,14 @@ fuel %>%
         limits = c(15, 20)
     ) +
     scale_color_manual(values = car_colors) +
-    facet_wrap(~car_name, scales = "free_y")
+    facet_wrap(~car_name, scales = "free_y") + 
+    labs(y = "Date", x = "Gallons of fuel")
 
 
 fuel %>%
     filter(car_name != "2008 Nissan Altima", gallons < 20) %>%
     mutate(label = format(date, format = "%b %d, %Y")) %>%
-    # group_by(car_name) %>%
     slice_max(cost, n = 30) %>%
-    # ungroup() %>%
     ggplot() +
     aes(y = fct_reorder(label, cost), x = cost, color = car_name) +
     geom_point(
@@ -45,7 +45,8 @@ fuel %>%
         size = 3
     ) +
     scale_x_continuous(labels = scales::dollar_format()) +
-    scale_color_manual(values = car_colors)
+    scale_color_manual(values = car_colors) +
+    labs(y = "Date", x = "Cost")
 
 
 fuel %>%
@@ -60,7 +61,8 @@ fuel %>%
         size = 3
     ) +
     scale_x_continuous(labels = scales::dollar_format()) +
-    scale_color_manual(values = car_colors)
+    scale_color_manual(values = car_colors) +
+    labs(y = "Date", x = "Fuel price")
 
 
 fuel %>%
@@ -78,7 +80,8 @@ fuel %>%
     ) +
     scale_x_continuous() +
     scale_color_manual(values = car_colors) +
-    facet_wrap(~car_name, scales = "free")
+    facet_wrap(~car_name, scales = "free") +
+    labs(y = "Date", x = "Miles driven")
 
 
 (fuel %>%
@@ -94,9 +97,10 @@ fuel %>%
         show.legend = FALSE,
         size = 3
     ) +
-    scale_x_continuous() +
+    scale_x_continuous(limits = c(15, 40)) +
     scale_color_manual(values = car_colors) +
-    facet_wrap(~car_name, scales = "free")
+    facet_wrap(~car_name, scales = "free_y") +
+    labs(y = "Date", x = "MPG")
 ) /
     (fuel %>%
         filter(car_name != "2008 Nissan Altima", gallons < 20) %>%
@@ -111,7 +115,8 @@ fuel %>%
             show.legend = FALSE,
             size = 3
         ) +
-        scale_x_continuous() +
+        scale_x_continuous(limits = c(15, 40)) +
         scale_color_manual(values = car_colors) +
-        facet_wrap(~car_name, scales = "free")
+        facet_wrap(~car_name, scales = "free_y") +
+        labs(y = "Date", x = "MPG")
     )
