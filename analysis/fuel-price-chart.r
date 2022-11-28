@@ -4,6 +4,7 @@ load("Rdata/fuel.Rdata")
 
 cutoff_date <- as.Date("2020-03-29")
 invasion <- as.Date("2022-02-24")
+postinvasion <- as.Date("2022-07-01")
 
 predict_fuel_price <-
     fuel %>%
@@ -18,7 +19,7 @@ predict_fuel_price <-
 
 predict_fuel_price_postinvasion <- # nolint
     fuel %>%
-    filter(date > invasion) %>%
+    filter(date > postinvasion) %>%
     lm(price ~ date, data = .) %>%
     broom::augment(
         interval = "prediction",
@@ -86,8 +87,8 @@ p1 <-
 models <-
     fuel %>%
     mutate(event = cut(date,
-        breaks = c(cutoff_date - years(100), cutoff_date, invasion, today()),
-        label = c("ignore", "post-COVID", "post-invasion")
+        breaks = c(cutoff_date - years(100), cutoff_date, invasion, postinvasion, today()),
+        label = c("ignore", "post-COVID", "post-invasion", "russian decline")
     )) %>%
     filter(event != "ignore") %>%
     group_by(event) %>%
@@ -108,7 +109,8 @@ predict_multi <-
         )
     )) %>%
     unnest(pricepred) %>%
-    rename(price = ".fitted")
+    rename(price = ".fitted") %>%
+    filter(event != "post-invasion")
 
 p2 <-
     fuel %>%
@@ -133,6 +135,7 @@ p2 <-
         limit = c(0, NA),
         sec.axis = sec_axis(~., labels = scales::dollar_format(accuracy = .01))
     ) +
+    coord_cartesian(ylim = c(0,5)) +
     geom_line(
         data = predict_multi,
         lty = 2,
