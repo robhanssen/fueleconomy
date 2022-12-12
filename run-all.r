@@ -6,7 +6,7 @@ source("fueleconomy.r")
 
 map(
     list.files(path = "analysis/",
-            pattern = "*.r", 
+            pattern = "*.r$", 
             full.names = TRUE),
     ~source(.x)
     )
