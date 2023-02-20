@@ -9,6 +9,9 @@ source("predictive_models.r")
 #
 liter_per_gallon <- 3.78
 km_per_mile <- 1.609
+car_colors <- c("2008 Nissan Altima" = "black",
+               "2011 Nissan Quest 3.5SL" = "#36072d",
+               "2013 Nissan Altima 2.5SV" = "#941100")
 
 # conversion factor between mpg and L/100km in formula
 # [L/100km] = fuelconversion / [mpg]
@@ -146,7 +149,8 @@ yearlycost <-
         fill = "Car",
         title = "Total annual spend"
     ) +
-    theme(legend.position = "none")
+    theme(legend.position = "none") + 
+    scale_fill_manual(values = car_colors)
 
 yearlymiles <-
     yearlyoverview %>%
@@ -166,7 +170,8 @@ yearlymiles <-
                 ~ . * km_per_mile
             )
     ) +
-    scale_x_continuous(breaks = 2010 + 2 * 0:10)
+    scale_x_continuous(breaks = 2010 + 2 * 0:10) +
+    scale_fill_manual(values = car_colors)
 
 costpermile <-
     yearlyoverview %>%
@@ -181,7 +186,8 @@ costpermile <-
         title = "Average Cost per mile"
     ) +
     theme(legend.position = "none") +
-    scale_x_continuous(breaks = 2010 + 2 * 0:10)
+    scale_x_continuous(breaks = 2010 + 2 * 0:10) +
+    scale_color_manual(values = car_colors)
 
 mpgplot <-
     yearlyoverview %>%
@@ -202,7 +208,8 @@ mpgplot <-
             name = "Average fuel efficiency (in L/100km)"
         )
     ) +
-    geom_hline(yintercept = totalmpg, lty = 2)
+    geom_hline(yintercept = totalmpg, lty = 2) + 
+    scale_color_manual(values = car_colors)
 
 (yearlycost + yearlymiles) / (mpgplot + costpermile)
 
@@ -379,7 +386,8 @@ gallon_prediction <-
         title = paste("Gasoline use prediction for end of year", year(today()))
     ) +
     geom_hline(yintercept = average_gallons, lty = 2, color = "gray50") +
-    theme(legend.position = "none")
+    theme(legend.position = "none")  +
+    scale_fill_manual(values = car_colors)
 
 average_cost <-
     fuel %>%
@@ -408,7 +416,8 @@ cost_prediction <-
         title = paste("Gasoline cost prediction for end of year", year(today()))
     ) +
     geom_hline(yintercept = average_cost, lty = 2, color = "gray50") +
-    theme(legend.position = "none")
+    theme(legend.position = "none") +
+    scale_fill_manual(values = car_colors)
 
 average_miles <-
     fuel %>%
@@ -442,7 +451,8 @@ distance_prediction <-
         title = paste("Miles prediction for end of year", year(today()))
     ) +
     geom_hline(yintercept = average_miles, lty = 2, color = "gray50") +
-    theme(legend.position = "none")
+    theme(legend.position = "none") + 
+    scale_fill_manual(values = car_colors)
 
 p <- distance_prediction +
     gallon_prediction +

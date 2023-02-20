@@ -11,6 +11,11 @@ load("Rdata/fuel.Rdata")
 liter_per_gallon <- 3.78
 km_per_mile <- 1.609
 
+car_colors <- c("2008 Nissan Altima" = "black",
+               "2011 Nissan Quest 3.5SL" = "#36072d",
+               "2013 Nissan Altima 2.5SV" = "#941100")
+
+
 # conversion factor between mpg and L/100km in formula
 # [L/100km] = fuelconversion / [mpg]
 fuelconversion <- liter_per_gallon * 100 / km_per_mile
@@ -103,6 +108,7 @@ ggplot(monthly_average_mileage) +
         y = "Average MPG",
         color = "Car"
     ) +
-    theme(legend.position = c(0.8, 0.1))
+    theme(legend.position = c(0.8, 0.1)) +
+    scale_color_manual(values = car_colors)
 
 ggsave("graphs/average_mpg.png", width = 8, height = 6)
