@@ -20,27 +20,23 @@ construct_date <- function(year, month, day = 1) {
 }
 
 display_date <- function(date, target_year = year(today())) {
-    ddate <- date + lubridate::years(target_year - lubridate::year(date))
-    lubridate::floor_date(ddate, unit = "month") + lubridate::days(1)
+    date + lubridate::years(target_year - lubridate::year(date))
 }
 
 cumulative_fuel <-
     fuel %>%
     arrange(date) %>%
-    group_by(year, month) %>%
-    summarize(
-        distance = sum(miles),
-        volume = sum(gallons),
-        money = sum(cost),
+    group_by(year) %>%
+    mutate(
+        distance = cumsum(miles),
+        volume = cumsum(gallons),
+        money = cumsum(cost),
         .groups = "drop"
     ) %>%
+    ungroup() %>%
     mutate(
-        date = construct_date(year, month),
         display_date = display_date(date)
-    ) %>%
-    group_by(year) %>%
-    mutate(across(distance:money, cumsum)) %>%
-    ungroup()
+    )
 
 year_length <- length(unique(cumulative_fuel$year))
 colors <- c(rep("gray70", year_length - 2), "gray20", "black")
