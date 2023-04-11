@@ -50,7 +50,8 @@ predict_gallons_used <- function(tbl, period) {
             names_from = date,
             values_from = .fitted
         ) %>%
-        mutate(gallons_used = cur_data()[[2]] - cur_data()[[1]]) %>%
+        # mutate(gallons_used = cur_data()[[2]] - cur_data()[[1]]) %>%
+        mutate(gallons_used = pick(everything())[[2]] - pick(everything())[[1]]) %>%
         select(car_name, gallons_used)
 
     period_predict %>%
@@ -104,7 +105,8 @@ predict_fuel_cost <- function(tbl, period) {
             names_from = date,
             values_from = .fitted
         ) %>%
-        mutate(total_fuel_cost = cur_data()[[2]] - cur_data()[[1]]) %>%
+        # mutate(total_fuel_cost = cur_data()[[2]] - cur_data()[[1]]) %>%
+        mutate(total_fuel_cost = pick(everything())[[2]] - pick(everything())[[1]]) %>%
         select(car_name, total_fuel_cost)
 
     period_predict %>%
@@ -158,7 +160,8 @@ predict_miles <- function(tbl, period) {
             names_from = date,
             values_from = .fitted
         ) %>%
-        mutate(total_miles = cur_data()[[2]] - cur_data()[[1]]) %>%
+        # mutate(total_miles = cur_data()[[2]] - cur_data()[[1]]) %>%
+        mutate(total_miles = pick(everything())[[2]] - pick(everything())[[1]]) %>%
         select(car_name, total_miles)
 
     period_predict %>%
