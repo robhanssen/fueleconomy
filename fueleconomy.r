@@ -142,7 +142,7 @@ yearlycost <-
     yearlyoverview %>%
     ggplot() +
     aes(factor(year), totalcost, fill = car_name) +
-    geom_bar(stat = "identity") +
+    geom_col(color = "white", alpha = .7) +
     labs(
         x = "Year",
         y = "Total Cost (in US$)",
@@ -156,7 +156,7 @@ yearlymiles <-
     yearlyoverview %>%
     ggplot() +
     aes(year, totalmiles, fill = car_name) +
-    geom_bar(stat = "identity") +
+    geom_col(color = "white", alpha = .7) +
     labs(
         title = "Total annual distance",
         x = "Year",
