@@ -11,7 +11,6 @@ load("Rdata/fuel.Rdata")
 
 alltime_avg <-
     fuel %>%
-    # filter(!str_detect(car_name, "2008")) %>%
     group_by(car_name) %>%
     summarize(
         all_mpg = sum(miles) / sum(gallons)
@@ -31,7 +30,6 @@ mpg_range <- seq(
 
 fuel_cdf <-
     fuel %>%
-    # filter(!str_detect(car_name, "2008")) %>%
     mutate(car_name = factor(car_name)) %>%
     split(.$car_name) %>%
     map(\(df)
@@ -45,21 +43,38 @@ fuel_cdf <-
     select(car_name = name, mpg, mpg_cdf = value)
 
 last_points <- 10
+cap <- glue::glue("Note: dots indicate last {last_points} fuel-up mpg data")
 
 last_fuelups <-
     fuel %>%
-    # filter(!str_detect(car_name, "2008")) %>%
     group_by(car_name) %>%
     slice_max(date, n = last_points) %>%
     ungroup()
 
-cap <- glue::glue("Note: dots indicate last {last_points} fuel-up mpg data")
+last10 <- last_fuelups %>%
+    select(car_name, mpg)
+
+last10_cdf <- map(
+    unique(last10$car_name),
+    ~ approx(
+        fuel_cdf$mpg[fuel_cdf$car_name == .x],
+        fuel_cdf$mpg_cdf[fuel_cdf$car_name == .x],
+        xout = last10$mpg[last10$car_name == .x]
+    )$y
+) %>%
+    enframe() %>%
+    mutate(name = unique(last10$car_name)) %>%
+    unnest(value) %>%
+    bind_cols(last10) %>%
+    select(car_name, mpg, mpg_cdf = value)
+
 
 mpg_cdf_p <-
     fuel_cdf %>%
     ggplot(aes(x = mpg, y = mpg_cdf, color = car_name)) +
     geom_line(show.legend = FALSE, alpha = .3) +
-    geom_jitter(data = last_fuelups, aes(y = 0.5, x = mpg), height = .1) +
+        geom_point(data = last10_cdf, 
+                aes(x = mpg, y = mpg_cdf)) +
     scale_y_continuous(
         labels = scales::percent_format(),
         breaks = seq(0, 1, length.out = 5)
@@ -84,3 +99,4 @@ ggsave("graphs/fuelmpg_cdf.png",
     height = 8, width = 6,
     plot = mpg_cdf_p
 )
+
