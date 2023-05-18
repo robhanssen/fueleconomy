@@ -11,7 +11,7 @@ load("Rdata/fuel.Rdata")
 
 alltime_avg <-
     fuel %>%
-    filter(!str_detect(car_name, "2008")) %>%
+    # filter(!str_detect(car_name, "2008")) %>%
     group_by(car_name) %>%
     summarize(
         all_mpg = sum(miles) / sum(gallons)
@@ -24,14 +24,14 @@ totalrows <-
 
 
 mpg_range <- seq(
-    floor(min(fuel$mpg)) - 3,
-    ceiling(max(fuel$mpg)) + 3,
+    floor(min(fuel$mpg)) - 1,
+    ceiling(max(fuel$mpg)) + 1,
     .5
 )
 
 fuel_cdf <-
     fuel %>%
-    filter(!str_detect(car_name, "2008")) %>%
+    # filter(!str_detect(car_name, "2008")) %>%
     mutate(car_name = factor(car_name)) %>%
     split(.$car_name) %>%
     map(\(df)
@@ -48,7 +48,7 @@ last_points <- 10
 
 last_fuelups <-
     fuel %>%
-    filter(!str_detect(car_name, "2008")) %>%
+    # filter(!str_detect(car_name, "2008")) %>%
     group_by(car_name) %>%
     slice_max(date, n = last_points) %>%
     ungroup()
@@ -59,8 +59,9 @@ mpg_cdf_p <-
     fuel_cdf %>%
     ggplot(aes(x = mpg, y = mpg_cdf, color = car_name)) +
     geom_line(show.legend = FALSE, alpha = .3) +
-    geom_point(data = last_fuelups, aes(y = 0, x = mpg)) +
-    scale_y_continuous(labels = scales::percent_format(), breaks = seq(0,1,length.out = 5)) +
+    geom_jitter(data = last_fuelups, aes(y = 0.5, x = mpg), height = .1) +
+    scale_y_continuous(labels = scales::percent_format(), 
+        breaks = seq(0,1,length.out = 5)) +
     labs(
         x = "Fuel economy", y = "Cumulative density function",
         caption = cap
@@ -71,7 +72,7 @@ mpg_cdf_p <-
             y = 0, yend = 1)) +
     facet_wrap(~car_name, ncol = 1, scale = "free_x") + 
     theme(legend.position = "none") + 
-    scale_color_manual(values = c("purple", "red"))
+    scale_color_manual(values = c("gray10", "purple", "red"))
 
 ggsave("graphs/fuelmpg_cdf.png", height = 8, width = 6, 
         plot = mpg_cdf_p)
