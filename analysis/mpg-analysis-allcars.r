@@ -9,6 +9,8 @@ theme_set(theme_light() +
 
 load("Rdata/fuel.Rdata")
 
+fuel <- fuel %>% filter(!str_detect(car_name, "2008"))
+
 alltime_avg <-
     fuel %>%
     group_by(car_name) %>%
@@ -70,7 +72,7 @@ last10_cdf <- map(
 
 
 mpg_cdf_p <-
-    fuel_cdf %>%
+    fuel_cdf %>% filter(!(mpg_cdf == 0 | mpg_cdf == 1)) %>%
     ggplot(aes(x = mpg, y = mpg_cdf, color = car_name)) +
     geom_line(show.legend = FALSE, alpha = .3) +
         geom_point(data = last10_cdf, 
@@ -93,7 +95,7 @@ mpg_cdf_p <-
     ) +
     facet_wrap(~car_name, ncol = 1, scale = "free_x") +
     theme(legend.position = "none") +
-    scale_color_manual(values = c("gray10", "purple", "red"))
+    scale_color_manual(values = c("purple", "red"))
 
 ggsave("graphs/fuelmpg_cdf.png",
     height = 8, width = 6,
