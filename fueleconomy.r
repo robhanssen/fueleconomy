@@ -13,6 +13,11 @@ car_colors <- c("2008 Nissan Altima" = "black",
                "2011 Nissan Quest 3.5SL" = "#36072d",
                "2013 Nissan Altima 2.5SV" = "#941100")
 
+car_levels <- c("2008 Nissan Altima",
+                "2013 Nissan Altima 2.5SV",
+                "2011 Nissan Quest 3.5SL"
+               )
+
 # conversion factor between mpg and L/100km in formula
 # [L/100km] = fuelconversion / [mpg]
 fuelconversion <- liter_per_gallon * 100 / km_per_mile
@@ -21,10 +26,10 @@ sixmonthsago <- today() %m-% months(6)
 
 fuel <-
     list.files(path = "cars/", pattern = "*.csv", full.names = TRUE) %>%
-    map_df(~ read_csv(.)) %>%
+    map_df(~ read_csv(., col_types = "cccdddd")) %>%
     mutate(
         date = as.Date(fuelup_date, format = "%m-%d-%Y"),
-        car_name = factor(car_name),
+        car_name = factor(car_name, levels = car_levels),
         model = factor(model),
         dayofyear = yday(date),
         day = day(date),
