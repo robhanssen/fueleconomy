@@ -4,7 +4,7 @@
 
 source("fueleconomy.r")
 
-map(
+walk(
     list.files(path = "analysis/",
             pattern = "*.r$",
             full.names = TRUE),
