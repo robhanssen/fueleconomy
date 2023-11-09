@@ -25,10 +25,9 @@ fuelconversion <- liter_per_gallon * 100 / km_per_mile
 sixmonthsago <- today() %m-% months(6)
 
 fuel <-
-    list.files(path = "cars/", pattern = "*.csv", full.names = TRUE) %>%
-    map_df(~ read_csv(., col_types = "cccdddd")) %>%
+    list.files(path = "cars/", pattern = "*.csv$", full.names = TRUE) %>%
+    map_df(~ read_csv(., col_types = "ccDdddd")) %>%
     mutate(
-        date = as.Date(fuelup_date, format = "%m-%d-%Y"),
         car_name = factor(car_name, levels = car_levels),
         model = factor(model),
         dayofyear = yday(date),
@@ -43,7 +42,6 @@ fuel <-
             "Over 6 months ago"
         ))
     ) %>%
-    select(-fuelup_date) %>%
     arrange(car_name, date) %>%
     group_by(car_name) %>%
     mutate(
